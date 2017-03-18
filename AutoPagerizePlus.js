@@ -243,9 +243,7 @@ window.addEventListener('scroll', () => {
 
 /* main */
 store.subscribe(fetchNextPageIfPossible)
-store.changeState(state => { state.pages.push(initPage) })
-if (initPage.nextLink === null) {
-  console.error("NO SITEMAP IS THERE.")
-} else {
-  fetchNextPage(initPage.nextLink)
-}
+store.changeState(state => {
+  state.pages.push(initPage)
+  state.linkToFetch = initPage.nextLink
+})
