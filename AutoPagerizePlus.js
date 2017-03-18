@@ -68,12 +68,12 @@ function createTerminal() {
   _terminal.style.backgroundColor = '#ddd'
 
   _terminal.floatLeft = (elem) => {
-    elem.style.float = 'left'i
+    elem.style.float = 'left'
     _terminal.appendChild(elem)
     return _terminal
   }
   _terminal.floatRight = (elem) => {
-    elem.style.float = 'right';
+    elem.style.float = 'right'
     _terminal.appendChild(elem)
     return _terminal
   }
