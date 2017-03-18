@@ -22,10 +22,6 @@ function getFirstElementByXPath(path, d) {
   return d.evaluate(path, d, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
 }
 
-const insertAfter = (newNode, referenceNode) => {
-  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling)
-}
-
 class PageParser {
   constructor(sitemap) {
     this.contentXPath = sitemap.pageElement
@@ -56,10 +52,7 @@ class PageParser {
   }
 
   parse(d) {
-    return new Page(
-      this.getContents(d),
-      this.getNextLink(d)
-    )
+    return new Page(this.getContents(d), this.getNextLink(d))
   }
 }
 
@@ -70,35 +63,58 @@ class Page {
   }
 }
 
-function createPageTitle(page, isButton = true, isEnded = false) {
-  let div = document.createElement('div')
-  div.style.backgroundColor = '#ddd'
-  if (isButton) {
-    let backButton = document.createElement('button')
-    backButton.innerHTML = "Go To Previous WebSite"
-    backButton.addEventListener('click', () => window.history.go(-store.state.pushCount))
-    backButton.style.float = 'left'
-    div.appendChild(backButton)
-  }
+function createTerminal() {
+  let _terminal = document.createElement('div')
+  _terminal.style.backgroundColor = '#ddd'
 
-  let displayFooterButton = document.createElement('button')
+  _terminal.floatLeft = (elem) => {
+    elem.style.float = 'left'i
+    _terminal.appendChild(elem)
+    return _terminal
+  }
+  _terminal.floatRight = (elem) => {
+    elem.style.float = 'right';
+    _terminal.appendChild(elem)
+    return _terminal
+  }
+  _terminal.clear = () => {
+    let clear = document.createElement('div')
+    clear.style.clear = 'both'
+    _terminal.appendChild(clear)
+    return _terminal
+  }
+  return _terminal
+}
+
+function createPrevButton() {
+  let prevButton = document.createElement('button')
+  prevButton.innerHTML = "Go To Previous WebSite"
+  prevButton.addEventListener('click', () => window.history.go(-store.state.pushCount))
+  return prevButton
+}
+
+function createDisplayFooterButton(page) {
+ let displayFooterButton = document.createElement('button')
   displayFooterButton.innerHTML = 'Toggle On/Off'
   displayFooterButton.addEventListener('click', () => {
     // _TODO_ ON / OFF logic
     store.resetListener()
     document.location = page.location
   })
-  let pageName = document.createElement('span')
-  pageName.innerHTML = isEnded ? "PAGE_ENDED" : (page.location ? `${page.location}` : page)
+  return displayFooterButton
+}
 
-  pageName.style.float = 'right'
-  let clearfix = document.createElement('div')
-  clearfix.style.clear = 'both'
+function createDisplayPathSpan(page) {
+  let displayPathSpan = document.createElement('span')
+  displayPathSpan.innerHTML = page.location
+  return displayPathSpan
+}
 
-  div.appendChild(displayFooterButton)
-  div.appendChild(pageName)
-  div.appendChild(clearfix)
-  return div
+function createDisplayMessage(msg) {
+  let displayMessage = document.createElement('span')
+  displayMessage.innerHTML = msg
+  displayMessage.style.color = 'red'
+  return displayMessage
 }
 
 /* Input */
@@ -118,32 +134,33 @@ initPage.location = document.location.href
 
 let lastContent = initPage.contents.last()
 
+const insertAfterLastContent = (inserteeNode) => {
+  lastContent.parentNode.insertBefore(inserteeNode, lastContent.nextSibling)
+  lastContent = inserteeNode
+}
+
 const render = (page, pageIndex) => {
-  let div = createPageTitle(page)
-  insertAfter(div, lastContent)
-  const elemName = `k4eRo0-${pageIndex}`
-  div.appendClass(elemName)
+  let terminal = createTerminal()
+    .floatLeft(createPrevButton())
+    .floatLeft(createDisplayFooterButton(page))
+    .floatRight(createDisplayPathSpan())
+    .clear()
 
-  lastContent = div
+  insertAfterLastContent(terminal)
 
-  page.contents.forEach(pageContent => {
-    insertAfter(pageContent, lastContent)
-    lastContent = pageContent
-  })
-
+  page.contents.forEach(pageContent => insertAfterLastContent(pageContent))
   if (page.nextLink == DOES_NOT_HAVE_LINK) {
-    let endDiv = createPageTitle(page, true, true)
-    endDiv.style.color = 'red'
-    insertAfter(endDiv, lastContent)
-    lastContent = endDiv
+    let lastTerminal = createTerminal().floatRight(createDisplayMessage('PAGE_ENDED')).clear()
+    insertAfterLastContent(lastTerminal)
   }
 }
 
 const renderError = (nextLink) => {
-  let div = createPageTitle(`ERROR HAS BEEN OCCURED at loading ${nextLink}. Something is happened. Reload it.` , false)
-  div.style.color = 'red'
-  insertAfter(div, lastContent)
-  lastContent = div
+  let terminal = createTerminal()
+    .floatRight(
+      createDisplayMessage(`ERROR HAS BEEN OCCURED at loading ${nextLink}. Something is happened. Reload it.`)
+    ).clear()
+  insertAfterLastContent(terminal)
 }
 
 /* logic statements */
@@ -164,9 +181,7 @@ const store = (() => {
     listeners.forEach(listener => listener(state))
   }
 
-  const subscribe = (listener) => {
-    listeners.push(listener)
-  }
+  const subscribe = (listener) => listeners.push(listener)
 
   const resetListener = () => {
     listeners = []
@@ -210,14 +225,6 @@ function fetchNextPageIfPossible(state) {
   }
 }
 
-function* idMaker() {
-  var index = 0;
-  while(true)
-    yield index++;
-}
-
-let gen = idMaker()
-
 window.addEventListener('scroll', () => {
   const height = window.innerHeight
 
@@ -239,7 +246,7 @@ window.addEventListener('scroll', () => {
         state.maxWentPageNum = currentPageNum
       }
       const currentPageLocation = state.pages[state.currentPageNum].location
-      window.history.pushState({ pageNum: currentPageNum, gen: gen.next().value }, currentPageNum, currentPageLocation)
+      window.history.pushState({}, currentPageNum, currentPageLocation)
       state.pushCount += 1
     }
   })
