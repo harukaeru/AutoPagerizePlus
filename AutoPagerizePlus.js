@@ -156,11 +156,11 @@ const renderError = (nextLink) => {
 // Redux-like store
 const store = (() => {
   let state = {
+    isFetching: false,
     linkToFetch: null,
+    pages: [],
     currentPageNum: 0,
     maxWentPageNum: 0,
-    pages: [],
-    isFetching: false,
     pushCount: 1
   }
   let listeners = []
