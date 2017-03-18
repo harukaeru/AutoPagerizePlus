@@ -9,17 +9,12 @@ Array.prototype.first = function(){
   return this[0]
 }
 
-HTMLElement.prototype.appendClass = function(className) {
-    this.className += ` ${className}`;
+HTMLDocument.prototype.getElementsByXPath = function(path) {
+  return this.evaluate(path, this, null, XPathResult.ANY_ORDERED_NODE_TYPE, null)
 }
 
-function getElementsByXPath(path, d) {
-  let elems = d.evaluate(path, d, null, XPathResult.ANY_ORDERED_NODE_TYPE, null)
-  return elems
-}
-
-function getFirstElementByXPath(path, d) {
-  return d.evaluate(path, d, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+HTMLDocument.prototype.getFirstElementByXPath = function(path, d) {
+  return this.evaluate(path, this, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
 }
 
 class PageParser {
@@ -29,7 +24,7 @@ class PageParser {
   }
 
   getContents(d) {
-    const xpathGen = getElementsByXPath(this.contentXPath, d)
+    const xpathGen = d.getElementsByXPath(this.contentXPath)
     let xpathElems = []
     while (true) {
       let elem = xpathGen.iterateNext()
@@ -43,7 +38,7 @@ class PageParser {
   }
 
   getNextLink(d) {
-    const pathElem = getFirstElementByXPath(this.nextLinkXPath, d)
+    const pathElem = d.getFirstElementByXPath(this.nextLinkXPath)
     if (!pathElem) {
       return NO_LINK
     }
