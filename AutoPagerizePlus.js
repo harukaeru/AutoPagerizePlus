@@ -67,22 +67,16 @@ function createTerminal() {
   let _terminal = document.createElement('div')
   _terminal.style.backgroundColor = '#ddd'
 
-  _terminal.floatLeft = (elem) => {
-    elem.style.float = 'left'
+  const setStyle = (elem, styleType) => {
+    Object.assign(elem.style, styleType)
     _terminal.appendChild(elem)
     return _terminal
   }
-  _terminal.floatRight = (elem) => {
-    elem.style.float = 'right'
-    _terminal.appendChild(elem)
-    return _terminal
-  }
-  _terminal.clear = () => {
-    let clear = document.createElement('div')
-    clear.style.clear = 'both'
-    _terminal.appendChild(clear)
-    return _terminal
-  }
+
+  _terminal.floatLeft = (elem) => setStyle(elem, { float: 'left' })
+  _terminal.floatRight = (elem) => setStyle(elem, { float: 'right' })
+  _terminal.clear = () => setStyle(document.createElement('div'), { clear: 'both' })
+
   return _terminal
 }
 
