@@ -1,5 +1,5 @@
 /* prepare */
-const DOES_NOT_HAVE_LINK = Symbol()
+const NO_LINK = Symbol()
 
 Array.prototype.last = function(){
     return this[this.length - 1]
@@ -45,7 +45,7 @@ class PageParser {
   getNextLink(d) {
     const pathElem = getFirstElementByXPath(this.nextLinkXPath, d)
     if (!pathElem) {
-      return DOES_NOT_HAVE_LINK
+      return NO_LINK
     }
     const href = pathElem.getAttribute('href')
     return href
@@ -93,14 +93,14 @@ function createDisplayFooterButton(page) {
   displayFooterButton.addEventListener('click', () => {
     // _TODO_ ON / OFF logic
     store.resetListener()
-    document.location = page.location
+    document.location = page.link
   })
   return displayFooterButton
 }
 
 function createDisplayPathSpan(page) {
   let displayPathSpan = document.createElement('span')
-  displayPathSpan.innerHTML = page.location
+  displayPathSpan.innerHTML = page.link
   return displayPathSpan
 }
 
@@ -124,7 +124,7 @@ const LIMIT = 6
 const pageParser = new PageParser(sitemap)
 
 let initPage = pageParser.parse(document, false)
-initPage.location = document.location.href
+initPage.link = document.location.href
 
 let lastContent = initPage.contents.last()
 
@@ -143,7 +143,7 @@ const render = (page, pageIndex) => {
   insertAfterLastContent(terminal)
 
   page.contents.forEach(pageContent => insertAfterLastContent(pageContent))
-  if (page.nextLink == DOES_NOT_HAVE_LINK) {
+  if (page.nextLink == NO_LINK) {
     let lastTerminal = createTerminal().floatRight(createDisplayMessage('PAGE_ENDED')).clear()
     insertAfterLastContent(lastTerminal)
   }
@@ -197,11 +197,11 @@ function fetchNextPage(nextLink) {
   .then(html => domParser.parseFromString(html, "text/html"))
   .then(dom => pageParser.parse(dom))
   .then(nextPage => {
-    nextPage.location = nextLink
+    nextPage.link = nextLink
     store.changeState(state => {
       render(nextPage, state.pages.length)
       state.pages.push(nextPage)
-      state.nextLink = nextPage.nextLink
+      state.linkToFetch = nextPage.nextLink
       state.isFetching = false
     })
   })
@@ -212,10 +212,10 @@ function fetchNextPage(nextLink) {
 }
 
 function fetchNextPageIfPossible(state) {
-  if (!state.isFetching && state.nextLink &&
-    state.nextLink != DOES_NOT_HAVE_LINK &&
+  if (!state.isFetching && state.linkToFetch &&
+    state.linkToFetch != NO_LINK &&
     state.pages.length < state.maxWentPageNum + LIMIT) {
-    fetchNextPage(state.nextLink)
+    fetchNextPage(state.linkToFetch)
   }
 }
 
@@ -239,7 +239,7 @@ window.addEventListener('scroll', () => {
       if (currentPageNum > state.maxWentPageNum) {
         state.maxWentPageNum = currentPageNum
       }
-      const currentPageLocation = state.pages[state.currentPageNum].location
+      const currentPageLocation = state.pages[state.currentPageNum].link
       window.history.pushState({}, currentPageNum, currentPageLocation)
       state.pushCount += 1
     }
